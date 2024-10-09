@@ -2,10 +2,8 @@ import service.UdpServer;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("UDP SERVER START");
-        new Thread(() -> {
-            UdpServer udpServer = new UdpServer(9999);
-            udpServer.start();
-        }).start();
+        int port = 8888; // 사용할 포트를 설정
+        UdpServer udpServer = new UdpServer(port);
+        udpServer.start();
     }
 }
