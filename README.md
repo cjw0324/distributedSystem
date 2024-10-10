@@ -7,7 +7,6 @@
 ## 프로젝트 구조
 project-root/ ├── loadbalancer/ # 로드 밸런서 관련 코드 │ ├── controller/ # HTTP 요청을 처리하는 컨트롤러 │ ├── service/ # 로드 밸런싱 및 메시지 전송 로직 │ ├── repository/ # 서버 등록 및 제거 관리 │ └── healthcheck/ # 헬스 체크 관리 ├── apiserver1/ # 첫 번째 API 서버 코드 │ └── service/ # API 서버의 헬스 체크와 로드 밸런싱 처리 ├── apiserver2/ # 두 번째 API 서버 코드 │ └── service/ # API 서버의 헬스 체크와 로드 밸런싱 처리 ├── tcpserver/ # TCP 서버 코드 │ └── service/ # TCP 서버의 헬스 체크와 로드 밸런싱 처리 ├── udpserver/ # UDP 서버 코드 │ └── service/ # UDP 서버의 헬스 체크와 로드 밸런싱 처리 └── README.md # 프로젝트 개요 및 설명
 
-
 ## 각 컴포넌트의 역할
 
 ### 1. 로드 밸런서 (`loadbalancer`)
