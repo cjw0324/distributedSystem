@@ -9,14 +9,13 @@ import java.util.Scanner;
 public class UdpServer {
     private final String loadBalancerHost;
     private final int loadBalancerPort;
-    private final int myport = 9012; // UDP 서버의 실제 애플리케이션 포트
 
     public UdpServer(String loadBalancerHost, int loadBalancerPort) {
         this.loadBalancerHost = loadBalancerHost;
         this.loadBalancerPort = loadBalancerPort;
     }
 
-    public void startConsole() {
+    public void startConsole(int myport) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter 1 to register or 2 to unregister the server. Type 'exit' to quit.");
 
@@ -29,12 +28,12 @@ public class UdpServer {
                 break;
             } else if ("1".equals(input)) {
                 // Register request
-                String jsonRequest = String.format("{\"cmd\":\"register\",\"protocol\":\"tcp\",\"port\":80,\"myport\":%d}", myport);
+                String jsonRequest = String.format("{\"cmd\":\"register\",\"protocol\":\"udp\",\"port\":80,\"myport\":%d}", myport);
                 String response = sendHttpRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else if ("2".equals(input)) {
                 // Unregister request
-                String jsonRequest = String.format("{\"cmd\":\"unregister\",\"protocol\":\"tcp\",\"port\":80,\"myport\":%d}", myport);
+                String jsonRequest = String.format("{\"cmd\":\"unregister\",\"protocol\":\"udp\",\"port\":80,\"myport\":%d}", myport);
                 String response = sendHttpRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else {
