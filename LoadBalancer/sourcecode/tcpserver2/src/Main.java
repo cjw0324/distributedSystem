@@ -9,7 +9,7 @@ public class Main {
 //
 //        TcpServer tcpServer = new TcpServer(loadBalancerHost, loadBalancerPort);
 //        tcpServer.startConsole();
-        int port = 9001; // HealthCheck 포트 설정
+        int port = 9002; // HealthCheck 포트 설정
 
         String loadBalancerHost = "localhost"; // 로드 밸런서 호스트
         int loadBalancerPort = 8080; // 로드 밸런서 포트

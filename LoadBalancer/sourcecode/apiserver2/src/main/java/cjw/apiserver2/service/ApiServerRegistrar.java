@@ -1,7 +1,8 @@
-package cjw.apiserver1.service;
+package cjw.apiserver2.service;
 
 import org.springframework.web.client.RestTemplate;
 import java.util.Scanner;
+
 public class ApiServerRegistrar {
     private final RestTemplate restTemplate = new RestTemplate();
     private final String loadBalancerUrl;
@@ -14,6 +15,8 @@ public class ApiServerRegistrar {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter 1 to register or 2 to unregister the server. Type 'exit' to quit.");
 
+        int myport = 8084; // API 서버의 HealthCheck port (내 실제 포트를 넘겨도 임시포트가 넘어감 이를 해결하기 위함)
+
         while (true) {
             System.out.print("> ");
             String input = scanner.nextLine().trim();
@@ -22,13 +25,13 @@ public class ApiServerRegistrar {
                 System.out.println("Exiting...");
                 break;
             } else if ("1".equals(input)) {
-                // 등록 요청 보내기
-                String jsonRequest = "{\"cmd\":\"register\",\"protocol\":\"tcp\",\"port\":80}";
+                // Register request
+                String jsonRequest = String.format("{\"cmd\":\"register\",\"protocol\":\"api\",\"port\":80,\"myport\":%d}", myport);
                 String response = sendRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else if ("2".equals(input)) {
-                // 삭제 요청 보내기
-                String jsonRequest = "{\"cmd\":\"unregister\",\"protocol\":\"tcp\",\"port\":80}";
+                // Unregister request
+                String jsonRequest = String.format("{\"cmd\":\"unregister\",\"protocol\":\"api\",\"port\":80,\"myport\":%d}", myport);
                 String response = sendRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else {
@@ -38,8 +41,6 @@ public class ApiServerRegistrar {
 
         scanner.close();
     }
-
-
 
     private String sendRequest(String jsonRequest) {
         try {

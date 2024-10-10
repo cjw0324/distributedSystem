@@ -1,18 +1,14 @@
-package cjw.apiserver2.service;
+package healthcheck;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.text.ParseException;
 
 public class HealthCheckHandler {
-
-    ObjectMapper objectMapper = new ObjectMapper();
     private final int port; // HealthCheck 포트
 
     public HealthCheckHandler(int port) {
@@ -33,9 +29,10 @@ public class HealthCheckHandler {
                         String request = in.readLine();
                         System.out.println("Received HealthCheck request: " + request);
 
+                        // 요청 처리 및 응답 생성
                         String response = handleRequest(request);
 
-                        // 요청에 대한 응답 (요청 문자열 그대로 반환)
+                        // 요청에 대한 응답 전송
                         out.println(response);
                         System.out.println("Sent HealthCheck response: " + response);
 
@@ -50,34 +47,49 @@ public class HealthCheckHandler {
     }
 
     private String handleRequest(String request) {
+        JSONParser parser = new JSONParser();
         try {
             // 요청을 JSON으로 파싱
-            JsonNode jsonRequest = objectMapper.readTree(request);
-            String cmd = jsonRequest.get("cmd").asText();
+            JSONObject jsonRequest = (JSONObject) parser.parse(new StringReader(request));
+            String cmd = (String) jsonRequest.get("cmd");
 
             // "cmd" 값이 "hello"이면, "ack" 값도 "hello"로 응답
+            JSONObject jsonResponse = new JSONObject();
             if ("hello".equals(cmd)) {
-                JsonNode jsonResponse = objectMapper.createObjectNode().put("ack", "hello");
-                return objectMapper.writeValueAsString(jsonResponse);
+                jsonResponse.put("ack", "hello");
             } else {
                 // 알 수 없는 명령어에 대한 응답
-                JsonNode jsonResponse = objectMapper.createObjectNode()
-                        .put("ack", "failed")
-                        .put("msg", "Unknown command");
-                return objectMapper.writeValueAsString(jsonResponse);
+                jsonResponse.put("ack", "failed");
+                jsonResponse.put("msg", "Unknown command");
             }
-        } catch (Exception e) {
+            return convertToJsonString(jsonResponse);
+
+        } catch (ParseException e) {
             e.printStackTrace();
             // JSON 파싱 오류에 대한 응답
-            JsonNode jsonResponse = objectMapper.createObjectNode()
-                    .put("ack", "failed")
-                    .put("msg", "Invalid JSON format");
-            try {
-                return objectMapper.writeValueAsString(jsonResponse);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                return "{\"ack\":\"failed\",\"msg\":\"Internal server error\"}";
-            }
+            JSONObject jsonResponse = new JSONObject();
+            jsonResponse.put("ack", "failed");
+            jsonResponse.put("msg", "Invalid JSON format");
+            return convertToJsonString(jsonResponse);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
+
+    // JSONObject를 수동으로 JSON 문자열로 변환
+    private String convertToJsonString(JSONObject jsonObject) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
+        boolean first = true;
+        for (Object key : jsonObject.keySet()) {
+            if (!first) {
+                sb.append(",");
+            }
+            first = false;
+            sb.append("\"").append(key).append("\":\"").append(jsonObject.get(key)).append("\"");
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
 }
