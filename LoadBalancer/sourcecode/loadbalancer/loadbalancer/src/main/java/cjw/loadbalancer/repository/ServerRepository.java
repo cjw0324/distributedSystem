@@ -7,6 +7,8 @@ import java.util.Set;
 
 @Repository
 public class ServerRepository {
+
+    private static int count = 1;
     private static final Set<String> registeredServers = new HashSet<>();
     private static final ServerRepository instance = new ServerRepository();
     public static ServerRepository getInstance(){
@@ -33,6 +35,13 @@ public class ServerRepository {
 
     public Set<String> findAll() {
         return new HashSet<>(registeredServers);
+    }
+
+    public void sequence(){
+        count++;
+    }
+    public int getCount(){
+        return count;
     }
 
 }

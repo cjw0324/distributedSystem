@@ -7,11 +7,11 @@ import java.io.PrintWriter;
 import java.net.Socket;
 import java.util.Scanner;
 
-public class TcpServer {
+public class UdpServer {
     private final String loadBalancerHost;
     private final int loadBalancerPort;
 
-    public TcpServer(String loadBalancerHost, int loadBalancerPort) {
+    public UdpServer(String loadBalancerHost, int loadBalancerPort) {
         this.loadBalancerHost = loadBalancerHost;
         this.loadBalancerPort = loadBalancerPort;
     }
@@ -29,12 +29,12 @@ public class TcpServer {
                 break;
             } else if ("1".equals(input)) {
                 // Register request
-                String jsonRequest = String.format("{\"cmd\":\"register\",\"protocol\":\"tcp\",\"port\":84}");
+                String jsonRequest = String.format("{\"cmd\":\"register\",\"protocol\":\"udp\",\"port\":86}");
                 String response = sendHttpRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else if ("2".equals(input)) {
                 // Unregister request
-                String jsonRequest = String.format("{\"cmd\":\"unregister\",\"protocol\":\"tcp\",\"port\":84}");
+                String jsonRequest = String.format("{\"cmd\":\"unregister\",\"protocol\":\"udp\",\"port\":86}");
                 String response = sendHttpRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else {
@@ -44,8 +44,6 @@ public class TcpServer {
 
         scanner.close();
     }
-
-
 
     private String sendHttpRequest(String jsonRequest) {
         try (Socket socket = new Socket(loadBalancerHost, loadBalancerPort);
@@ -65,13 +63,12 @@ public class TcpServer {
             out.print(httpRequest);
             out.flush();
 
-            // 응답 수신 (Content-Length 기반)
+            // 헤더 파싱
             String responseLine;
             StringBuilder headers = new StringBuilder();
             int contentLength = 0;
             boolean isHeaderParsed = false;
 
-            // 헤더 파싱
             while ((responseLine = in.readLine()) != null) {
                 if (responseLine.isEmpty()) {
                     // 빈 줄을 만나면 헤더 끝
@@ -85,7 +82,7 @@ public class TcpServer {
                 }
             }
 
-            // 바디 파싱
+            // 응답 바디 읽기
             StringBuilder responseBody = new StringBuilder();
             if (isHeaderParsed && contentLength > 0) {
                 char[] buffer = new char[contentLength];

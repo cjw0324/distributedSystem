@@ -1,7 +1,7 @@
 package cjw.apiserver1;
 
 import cjw.apiserver1.service.ApiServerRegistrar;
-import cjw.apiserver1.service.HealthCheckHandler;
+import cjw.apiserver1.service.SocketConnection;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -18,11 +18,10 @@ public class Apiserver1Application {
 		new Thread(registrar::startConsole).start();
 
 		// HealthCheckHandler 인스턴스 생성 및 실행
-		HealthCheckHandler healthCheckHandler = new HealthCheckHandler(8082);
-		new Thread(healthCheckHandler::start).start();
-
-
+		SocketConnection socketConnection = new SocketConnection(81);
+		new Thread(socketConnection::start).start();
 
 		System.out.println("API Server is running with HealthCheck and command handling enabled.");
 	}
+
 }

@@ -2,20 +2,12 @@ package cjw.loadbalancer.healthcheck;
 
 import cjw.loadbalancer.repository.ServerRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.*;
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 @Slf4j
 public class HealthCheck {
     ServerRepository serverRepository = ServerRepository.getInstance();
@@ -36,7 +28,7 @@ public class HealthCheck {
                 while (iterator.hasNext()) {
                     String server = iterator.next();
                     String[] serverInfo = server.split(":");
-                    String host = serverInfo[0];
+                    String hostIp = serverInfo[0];
                     int port = Integer.parseInt(serverInfo[1]);
                     String protocol = serverInfo[2];
 
@@ -44,26 +36,25 @@ public class HealthCheck {
                         System.out.println(s);
                     }
 
-
-                    boolean isHealthy = checkServerHealth(host, port, protocol);
+                    boolean isHealthy = checkServerHealth(hostIp, port, protocol);
                     if (!isHealthy) {
                         // HealthCheck 실패 시 서버 목록에서 제거
-                        System.out.println("Removing " + host + ":" + port + " from registered servers.");
+                        System.out.println("Removing " + hostIp + ":" + port + " from registered servers.");
                         iterator.remove();
-                        serverRepository.remove(host + ":" + port+":"+protocol);
+                        serverRepository.remove(hostIp + ":" + port+":"+protocol);
                     }
                 }
 
             } catch (InterruptedException e) {
-//                e.printStackTrace();
+                e.printStackTrace();
                 log.info("disconnect");
             }
         }
     }
 
-    private boolean checkServerHealth(String host, int port, String protocol) {
+    private boolean checkServerHealth(String hostIp, int port, String protocol) {
         if (protocol.equals("tcp") || protocol.equals("api")) {
-            try (Socket socket = new Socket(host, port);
+            try (Socket socket = new Socket(hostIp, port);
                  OutputStream outputStream = socket.getOutputStream();
                  BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                  PrintWriter out = new PrintWriter(outputStream, true)) {
@@ -75,14 +66,14 @@ public class HealthCheck {
 
                 // 응답 수신
                 String response = in.readLine();
-                System.out.println("Received response from " + host + ":" + port + " - " + response);
+                System.out.println("Received response from " + hostIp + ":" + port + " - " + response);
 
                 // 응답 검증
                 return response != null && response.equals("{\"ack\":\"hello\"}");
             } catch (Exception e) {
                 // HealthCheck 실패 시
-                System.out.println("HealthCheck failed for " + host + ":" + port);
-//                e.printStackTrace();
+                System.out.println("HealthCheck failed for " + hostIp + ":" + port);
+                e.printStackTrace();
                 log.info("disconnect");
                 return false;
             }
@@ -92,7 +83,7 @@ public class HealthCheck {
             try (DatagramSocket socket = new DatagramSocket()) {
                 String healthCheckMessage = "{\"cmd\":\"hello\"}";
                 byte[] buffer = healthCheckMessage.getBytes();
-                InetAddress address = InetAddress.getByName(host);
+                InetAddress address = InetAddress.getByName(hostIp);
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
 
                 // 요청 전송
@@ -105,14 +96,14 @@ public class HealthCheck {
                 socket.receive(responsePacket);
 
                 String response = new String(responsePacket.getData(), 0, responsePacket.getLength());
-                System.out.println("Received response from " + host + ":" + port + " - " + response);
+                System.out.println("Received response from " + hostIp + ":" + port + " - " + response);
 
                 // 응답 검증
                 return response.equals("{\"ack\":\"hello\"}");
             } catch (Exception e) {
                 // HealthCheck 실패 시
-                System.out.println("HealthCheck failed for " + host + ":" + port);
-//                e.printStackTrace();
+                System.out.println("HealthCheck failed for " + hostIp + ":" + port);
+                e.printStackTrace();
                 log.info("disconnect");
                 return false;
             }
@@ -121,6 +112,4 @@ public class HealthCheck {
             return false;
         }
     }
-
-
 }

@@ -16,7 +16,7 @@ public class TcpServer {
         this.loadBalancerPort = loadBalancerPort;
     }
 
-    public void startConsole(int myport) {
+    public void startConsole() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Enter 1 to register or 2 to unregister the server. Type 'exit' to quit.");
 
@@ -29,12 +29,12 @@ public class TcpServer {
                 break;
             } else if ("1".equals(input)) {
                 // Register request
-                String jsonRequest = String.format("{\"cmd\":\"register\",\"protocol\":\"tcp\",\"port\":80,\"myport\":%d}", myport);
+                String jsonRequest = String.format("{\"cmd\":\"register\",\"protocol\":\"tcp\",\"port\":83}");
                 String response = sendHttpRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else if ("2".equals(input)) {
                 // Unregister request
-                String jsonRequest = String.format("{\"cmd\":\"unregister\",\"protocol\":\"tcp\",\"port\":80,\"myport\":%d}", myport);
+                String jsonRequest = String.format("{\"cmd\":\"unregister\",\"protocol\":\"tcp\",\"port\":83}");
                 String response = sendHttpRequest(jsonRequest);
                 System.out.println("Response from LoadBalancer: " + response);
             } else {
