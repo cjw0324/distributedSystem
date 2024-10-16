@@ -2,11 +2,17 @@ package cjw.loadbalancer.healthcheck;
 
 import cjw.loadbalancer.repository.ServerRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.*;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.*;
+import java.nio.charset.Charset;
+import java.util.HashMap;
 import java.util.Iterator;
 @Slf4j
 public class HealthCheck {
@@ -32,9 +38,6 @@ public class HealthCheck {
                     int port = Integer.parseInt(serverInfo[1]);
                     String protocol = serverInfo[2];
 
-                    for (String s : serverInfo) {
-                        System.out.println(s);
-                    }
 
                     boolean isHealthy = checkServerHealth(hostIp, port, protocol);
                     if (!isHealthy) {
@@ -53,7 +56,22 @@ public class HealthCheck {
     }
 
     private boolean checkServerHealth(String hostIp, int port, String protocol) {
-        if (protocol.equals("tcp") || protocol.equals("api")) {
+        if (protocol.equals("api")) {
+            try{
+                // HealthCheck 요청 전송
+                String healthCheckMessage = "{\"cmd\":\"hello\"}";
+                System.out.println("send health check msg to " + hostIp + ":" + port + " - " + healthCheckMessage);
+                String response = sendApi(hostIp, port, healthCheckMessage);
+                System.out.println("Received response from " + hostIp + ":" + port + " - " + response);
+                return response != null && response.equals("{\"ack\":\"hello\"}");
+            } catch (Exception e) {
+                // HealthCheck 실패 시
+                System.out.println("HealthCheck failed for " + hostIp + ":" + port);
+//                e.printStackTrace();
+                log.info("disconnect");
+                return false;
+            }
+        } else if (protocol.equals("tcp")) {
             try (Socket socket = new Socket(hostIp, port);
                  OutputStream outputStream = socket.getOutputStream();
                  BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -61,6 +79,7 @@ public class HealthCheck {
 
                 // HealthCheck 요청 전송
                 String healthCheckMessage = "{\"cmd\":\"hello\"}";
+                System.out.println("send health check msg to " + hostIp + ":" + port + " - " + healthCheckMessage);
                 out.println(healthCheckMessage);
                 out.flush();
 
@@ -73,15 +92,16 @@ public class HealthCheck {
             } catch (Exception e) {
                 // HealthCheck 실패 시
                 System.out.println("HealthCheck failed for " + hostIp + ":" + port);
-                e.printStackTrace();
+//                e.printStackTrace();
                 log.info("disconnect");
                 return false;
             }
-        }  else if (protocol.equals("udp")) {
+        } else if (protocol.equals("udp")) {
             // // ip,port 로 udp 통신으로 String healthCheckMessage = "{\"cmd\":\"hello\"}"; healthCheckMessage 보내기
             // UDP 통신을 사용하여 HealthCheck 수행
             try (DatagramSocket socket = new DatagramSocket()) {
                 String healthCheckMessage = "{\"cmd\":\"hello\"}";
+                System.out.println("send health check msg to " + hostIp + ":" + port + " - " + healthCheckMessage);
                 byte[] buffer = healthCheckMessage.getBytes();
                 InetAddress address = InetAddress.getByName(hostIp);
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length, address, port);
@@ -103,13 +123,32 @@ public class HealthCheck {
             } catch (Exception e) {
                 // HealthCheck 실패 시
                 System.out.println("HealthCheck failed for " + hostIp + ":" + port);
-                e.printStackTrace();
+//                e.printStackTrace();
                 log.info("disconnect");
                 return false;
             }
-        }
-        else{
+        } else {
             return false;
+        }
+    }
+
+    private String sendApi(String hostIp, int port, String message) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://" + hostIp + ":" + Integer.toString(port) + "/api/healthcheck";
+//        log.info("send healthcheck to = {}", url);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<String> request = new HttpEntity<>(message, headers);
+
+        ResponseEntity<String> response = restTemplate.exchange(url, HttpMethod.POST, request, String.class);
+
+        if (response.getStatusCode() == HttpStatus.OK) {
+            return response.getBody();
+        } else {
+            log.error("Request failed with status code: {}", response.getStatusCode());
+            return null;
         }
     }
 }

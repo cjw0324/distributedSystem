@@ -18,7 +18,7 @@ public class Registration {
     private RegistrationService loadBalancer;
 
     // /loadbalancer/register 경로로 들어오는 POST 요청을 처리
-    @PostMapping("/register") //localhost:8080/loadbalancer/register
+    @PostMapping("/register") //localhost:8080/loadbalancer/register   <- {"cmd" : ... , "protocol" : ... , "port" : ...}
     public ResponseEntity<String> handleServerRequest(@RequestBody String jsonRequest, HttpServletRequest request) {
         String clientIp = request.getRemoteAddr(); // 클라이언트 IP 주소
 

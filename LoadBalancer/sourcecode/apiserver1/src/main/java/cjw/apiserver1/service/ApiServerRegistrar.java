@@ -1,47 +1,40 @@
 package cjw.apiserver1.service;
 
-import org.springframework.web.client.RestTemplate;
-import java.util.Scanner;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
+@Slf4j
+@RestController
+@RequestMapping("/api")
 public class ApiServerRegistrar {
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String loadBalancerUrl;
+    private String loadBalancerUrl = "http://localhost:8080";
+    @Value("${server.port}")
+    private String port;
 
-
-    public ApiServerRegistrar(String loadBalancerUrl) {
-        this.loadBalancerUrl = loadBalancerUrl;
-
-    }
-
-    public void startConsole() {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter 1 to register or 2 to unregister the server. Type 'exit' to quit.");
-
-        while (true) {
-            System.out.print("> ");
-            String input = scanner.nextLine().trim();
-
-            if ("exit".equalsIgnoreCase(input)) {
-                System.out.println("Exiting...");
-                break;
-            } else if ("1".equals(input)) {
-                // Register request
-                String jsonRequest = String.format(
-                        "{\"cmd\":\"register\",\"protocol\":\"api\",\"port\":81}");
-                String response = sendRequest(jsonRequest);
-                System.out.println("Response from LoadBalancer: " + response);
-            } else if ("2".equals(input)) {
-                // Unregister request
-                String jsonRequest = String.format(
-                        "{\"cmd\":\"unregister\",\"protocol\":\"api\",\"port\":81}");
-                String response = sendRequest(jsonRequest);
-                System.out.println("Response from LoadBalancer: " + response);
-            } else {
-                System.out.println("Invalid input. Please enter '1' to register, '2' to unregister, or 'exit' to quit.");
-            }
+    @GetMapping("/connect")
+    public String register(HttpServletRequest request, HttpServletResponse response) {
+        String action = request.getParameter("action"); //action=register
+        log.info("api server request : {}", action);
+        String jsonRequest;
+        if (action.equals("register")) {
+            jsonRequest = String.format(
+                    "{\"cmd\":\"register\",\"protocol\":\"api\",\"port\":" + port + "}");
+        } else if (action.equals("unregister")) {
+            jsonRequest = String.format(
+                    "{\"cmd\":\"unregister\",\"protocol\":\"api\",\"port\":" + port + "}");
+        } else {
+            return "잘못된 요청 입니다.";
         }
 
-        scanner.close();
+        log.info("jsonRequest : {}", jsonRequest);
+        String ackMessage = sendRequest(jsonRequest);
+        System.out.println("Response from LoadBalancer: " + ackMessage);
+        return "Response from LoadBalancer: " + ackMessage;
     }
 
     private String sendRequest(String jsonRequest) {

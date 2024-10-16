@@ -2,6 +2,7 @@ package cjw.loadbalancer.service;
 
 import cjw.loadbalancer.repository.ServerRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -44,7 +45,7 @@ public class LoadBalancingService {
     }
 
     private boolean sendMessageToServer(String hostIp, int port, String protocol, String message) {
-        if (protocol.equals("tcp") || protocol.equals("api")) {
+        if (protocol.equals("tcp")) {
             // TCP 또는 HTTP 통신을 사용하여 메시지 전송
             try (Socket socket = new Socket(hostIp, port);
                  OutputStream outputStream = socket.getOutputStream();
@@ -58,7 +59,16 @@ public class LoadBalancingService {
                 log.error("Failed to send message to {}:{}", hostIp, port, e);
                 return false;
             }
-        } else if (protocol.equals("udp")) {
+        } else if (protocol.equals("api")) {
+            try {
+                System.out.println(sendApi(hostIp, port, message));
+                return true;
+            } catch (Exception e) {
+                log.error("Failed to send message to {}:{}", hostIp, port, e);
+                return false;
+            }
+        }
+        else if (protocol.equals("udp")) {
             // UDP 통신을 사용하여 메시지 전송
             try (DatagramSocket socket = new DatagramSocket()) {
                 byte[] buffer = message.getBytes();
@@ -73,5 +83,13 @@ public class LoadBalancingService {
             }
         }
         return false;
+    }
+
+    public String sendApi(String hostIp, int port, String message) {
+        RestTemplate restTemplate = new RestTemplate();
+        String url = "http://" + hostIp + ":" + Integer.toString(port) + "/api/message";
+        log.info("send message to = {}", url);
+
+        return restTemplate.postForEntity(url, message, String.class).toString();
     }
 }

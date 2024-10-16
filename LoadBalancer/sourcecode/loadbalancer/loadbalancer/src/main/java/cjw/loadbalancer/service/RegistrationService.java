@@ -1,16 +1,15 @@
 package cjw.loadbalancer.service;
 import cjw.loadbalancer.repository.ServerRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.catalina.Server;
 import org.springframework.stereotype.Service;
 import java.util.Map;
 
 
 @Service
 public class RegistrationService {
-
     ServerRepository serverRepository = ServerRepository.getInstance();
     private final ObjectMapper objectMapper = new ObjectMapper(); //json 파싱 내부 java 클래스
-
     public String handleServerRequest(String jsonRequest, String ip) {
         try {
             // 요청을 JSON 형식으로 파싱
