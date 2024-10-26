@@ -22,4 +22,8 @@ public class ServerRepository {
     public Boolean remove(Server server) {
         return registeredServers.remove(server);
     }
+
+    public Set<Server> findAll() {
+        return registeredServers;
+    }
 }
